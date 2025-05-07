@@ -1,0 +1,9 @@
+
+{
+  "imports": {
+    "std/": "https://deno.land/std@0.177.0/",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2",
+    "argon2": "https://deno.land/x/argon2/mod.ts",
+    "djwt": "https://deno.land/x/djwt@v3.0.2/"
+  }
+}
