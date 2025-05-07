@@ -1,21 +1,21 @@
-// src/components/referencias/ReferenciaList.tsx (FINAL v9 - Completo y Corregido)
+// src/components/referencias/ReferenciaList.tsx
 import React from 'react';
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Tooltip, Button, Spinner, Chip, SortDescriptor } from "@heroui/react";
+// CORREGIDO: Quitado 'Chip' de los imports
+import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Tooltip, Button, Spinner, SortDescriptor } from "@heroui/react";
 import { EditIcon } from '../icons/EditIcon';
 import { DeleteIcon } from '../icons/DeleteIcon';
 import { Referencia } from '../../types';
 
 interface ReferenciaListProps {
   items: Referencia[];
-  totalItems: number; // Total después de filtrar
+  totalItems: number;
   onEdit: (referencia: Referencia) => void;
   onInactivate: (id: string) => void;
   isLoading: boolean;
-  sortDescriptor: SortDescriptor; // Recibe el estado de ordenamiento
-  onSortChange: (descriptor: SortDescriptor) => void; // Recibe la función para cambiar el ordenamiento
+  sortDescriptor: SortDescriptor;
+  onSortChange: (descriptor: SortDescriptor) => void;
 }
 
-// Columnas con 'sortable' habilitado donde corresponde
 const columns = [
   { key: "ean_referencia", name: "EAN REFERENCIA", sortable: true },
   { key: "descripcion", name: "DESCRIPCIÓN", sortable: true },
@@ -26,7 +26,6 @@ const columns = [
 
 const ReferenciaList: React.FC<ReferenciaListProps> = ({ items, totalItems, onEdit, onInactivate, isLoading, sortDescriptor, onSortChange }) => {
 
-  // Render Cell sin cambios
   const renderCell = React.useCallback((referencia: Referencia, columnKey: React.Key) => {
     const cellValue = referencia[columnKey as keyof Referencia];
     switch (columnKey) {
@@ -40,8 +39,8 @@ const ReferenciaList: React.FC<ReferenciaListProps> = ({ items, totalItems, onEd
   return (
     <Table
       aria-label="Tabla de Referencias"
-      sortDescriptor={sortDescriptor} // <-- Pasar prop
-      onSortChange={onSortChange}     // <-- Pasar prop
+      sortDescriptor={sortDescriptor}
+      onSortChange={onSortChange}
       classNames={{ table: "min-h-[420px]" }}
     >
       <TableHeader columns={columns}>
@@ -52,7 +51,7 @@ const ReferenciaList: React.FC<ReferenciaListProps> = ({ items, totalItems, onEd
         )}
       </TableHeader>
       <TableBody
-        items={items} // Items de la página actual (ya filtrados y ordenados por el padre)
+        items={items}
         isLoading={isLoading}
         loadingContent={<Spinner label="Cargando..." />}
         emptyContent={totalItems === 0 ? "No hay referencias activas registradas." : "No hay referencias que coincidan con los filtros."}

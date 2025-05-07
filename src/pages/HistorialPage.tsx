@@ -1,15 +1,16 @@
-// src/pages/HistorialPage.tsx (FINAL v4 - Fix Select String + Completo)
+// src/pages/HistorialPage.tsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Spinner, Input, Button, Card, CardBody, Pagination,
-    SortDescriptor, Select, SelectItem // Asegurar imports
+    SortDescriptor, Select, SelectItem, // Asegurar imports
+    Selection as SharedSelection // Importar Selection como SharedSelection si es necesario
 } from "@heroui/react";
-import { supabase } from '../lib/supabaseClient'; // Ajusta ruta
-import HistorialList from '../components/historial/HistorialList'; // Ajusta ruta
-import { HistorialMovimiento } from '../types'; // Ajusta ruta
+import { supabase } from '../lib/supabaseClient';
+import HistorialList from '../components/historial/HistorialList';
+import { HistorialMovimiento } from '../types';
 import toast from 'react-hot-toast';
 
-const ROWS_PER_PAGE = 15; // O el número de filas que prefieras
+const ROWS_PER_PAGE = 15;
 
 const HistorialPage: React.FC = () => {
   const [historial, setHistorial] = useState<HistorialMovimiento[]>([]);
@@ -23,7 +24,7 @@ const HistorialPage: React.FC = () => {
     direction: "descending",
   });
 
-  // Obtener acciones únicas para el Select
+  // Obtener acciones únicas para el Select (sin cambios)
   const uniqueActions = useMemo(() => {
     if (!historial || historial.length === 0) return [];
     const actions = new Set(historial.map(item => item.accion).filter(Boolean));
@@ -33,75 +34,61 @@ const HistorialPage: React.FC = () => {
   // Función para cargar el historial
   const fetchHistorial = useCallback(async () => {
     setIsLoading(true);
-    console.log("[Historial Fetch] Iniciando carga con filtros:", { filtroAccion, filtroFechaInicio, filtroFechaFin });
     try {
+      // CORREGIDO: Select explícito para evitar ambigüedad
       let query = supabase
         .from('historial_movimientos')
-        // *** CORRECCIÓN: Quitar comentarios SQL de aquí ***
         .select(`
-            id,
-            timestamp,
-            accion,
-            caja_id,
-            ubicacion_id,
-            referencia_id,
-            usuario_id,
-            detalles,
-            usuarios!left( nombre_usuario ),
-            cajas!left( ean_caja ),
-            ubicaciones!left( codigo_visual ),
-            referencias!left( ean_referencia )
+            id, timestamp, accion, caja_id, ubicacion_id, referencia_id, usuario_id, detalles,
+            usuarios:usuario_id ( nombre_usuario ),
+            cajas:caja_id ( ean_caja ),
+            ubicaciones:ubicacion_id ( codigo_visual ),
+            referencias:referencia_id ( ean_referencia )
         `);
 
-      // Aplicar filtros en BD
       if (filtroAccion) { query = query.eq('accion', filtroAccion); }
       if (filtroFechaInicio) { query = query.gte('timestamp', `${filtroFechaInicio}T00:00:00`); }
       if (filtroFechaFin) { const endDate = new Date(filtroFechaFin); endDate.setHours(23, 59, 59, 999); query = query.lte('timestamp', endDate.toISOString()); }
-
-      // Añadir ordenamiento inicial por si acaso (aunque se reordena en frontend)
       query = query.order('timestamp', { ascending: false });
 
       const { data, error } = await query;
       if (error) throw error;
 
-      // Mapear datos
-      const mappedData = (data || []).map(item => ({
-          ...item,
-          nombre_usuario: item.usuarios?.nombre_usuario,
-          ean_caja: item.cajas?.ean_caja,
-          codigo_visual_ubicacion: item.ubicaciones?.codigo_visual,
-          ean_referencia: item.referencias?.ean_referencia,
-      })) as HistorialMovimiento[];
+      // CORREGIDO: Mapeo robusto para relaciones (maneja objeto, array o null)
+      const mappedData = (data || []).map(item => {
+          const getNestedProp = (nestedData: any, prop: string) => {
+              if (!nestedData) return null;
+              if (Array.isArray(nestedData)) {
+                  return nestedData[0]?.[prop] ?? null;
+              }
+              return nestedData[prop] ?? null;
+          };
+          return {
+              ...item,
+              nombre_usuario: getNestedProp(item.usuarios, 'nombre_usuario'),
+              ean_caja: getNestedProp(item.cajas, 'ean_caja'),
+              codigo_visual_ubicacion: getNestedProp(item.ubicaciones, 'codigo_visual'),
+              ean_referencia: getNestedProp(item.referencias, 'ean_referencia'),
+          };
+      }) as HistorialMovimiento[];
 
       setHistorial(mappedData);
       setCurrentPage(1);
-      console.log("[Historial Fetch] Historial cargado/filtrado:", mappedData.length);
 
     } catch (err: any) {
-      console.error("Error cargando historial:", err);
       toast.error(`Error al cargar historial: ${err.message || 'Desconocido'}`);
       setHistorial([]);
     } finally {
       setIsLoading(false);
     }
-  }, [filtroAccion, filtroFechaInicio, filtroFechaFin]); // Depende de los filtros
+  }, [filtroAccion, filtroFechaInicio, filtroFechaFin]);
 
-  // Efecto para recargar cuando los filtros cambian
-  useEffect(() => {
-    fetchHistorial();
-  }, [fetchHistorial]);
+  useEffect(() => { fetchHistorial(); }, [fetchHistorial]);
 
-  // Lógica de Ordenamiento (Frontend)
-  const sortedHistorial = useMemo(() => {
-      return [...historial].sort((a, b) => {
-          if (!a || !b) return 0; let first: any; let second: any; const col = sortDescriptor.column as keyof HistorialMovimiento | 'usuario';
-          switch (col) { case 'timestamp': first = new Date(a.timestamp || 0).getTime(); second = new Date(b.timestamp || 0).getTime(); break; case 'usuario': first = a.nombre_usuario ?? a.usuario_id ?? ''; second = b.nombre_usuario ?? b.usuario_id ?? ''; break; default: first = a[col as keyof HistorialMovimiento] ?? ''; second = b[col as keyof HistorialMovimiento] ?? ''; break; }
-          let cmp = 0; if (col === 'timestamp') { cmp = first - second; } else if (typeof first === 'string' && typeof second === 'string') { cmp = first.localeCompare(second, undefined, { numeric: true, sensitivity: 'base' }); } else if (first < second) { cmp = -1; } else if (first > second) { cmp = 1; }
-          return sortDescriptor.direction === "descending" ? -cmp : cmp;
-       });
-  }, [historial, sortDescriptor]);
+  // Lógica de Ordenamiento (sin cambios)
+  const sortedHistorial = useMemo(() => { return [...historial].sort((a, b) => { if (!a || !b) return 0; let first: any; let second: any; const col = sortDescriptor.column as keyof HistorialMovimiento | 'usuario'; switch (col) { case 'timestamp': first = new Date(a.timestamp || 0).getTime(); second = new Date(b.timestamp || 0).getTime(); break; case 'usuario': first = a.nombre_usuario ?? a.usuario_id ?? ''; second = b.nombre_usuario ?? b.usuario_id ?? ''; break; default: first = a[col as keyof HistorialMovimiento] ?? ''; second = b[col as keyof HistorialMovimiento] ?? ''; break; } let cmp = 0; if (col === 'timestamp') { cmp = first - second; } else if (typeof first === 'string' && typeof second === 'string') { cmp = first.localeCompare(second, undefined, { numeric: true, sensitivity: 'base' }); } else if (first < second) { cmp = -1; } else if (first > second) { cmp = 1; } return sortDescriptor.direction === "descending" ? -cmp : cmp; }); }, [historial, sortDescriptor]);
 
-  // Paginación
+  // Paginación (sin cambios)
   const totalPages = Math.ceil(sortedHistorial.length / ROWS_PER_PAGE);
   const itemsForCurrentPage = useMemo(() => { const start = (currentPage - 1) * ROWS_PER_PAGE; const end = start + ROWS_PER_PAGE; return sortedHistorial.slice(start, end); }, [currentPage, sortedHistorial]);
   useEffect(() => { if (currentPage > totalPages && totalPages > 0) { setCurrentPage(totalPages); } else if (totalPages === 0 && currentPage !== 1) { setCurrentPage(1); } }, [totalPages, currentPage]);
@@ -109,7 +96,26 @@ const HistorialPage: React.FC = () => {
   // Manejadores
   const handleClearFilters = () => { setFiltroAccion(''); setFiltroFechaInicio(''); setFiltroFechaFin(''); };
   const handleSortChange = useCallback((descriptor: SortDescriptor) => { setSortDescriptor(descriptor); setCurrentPage(1); }, []);
-  const handleActionFilterChange = useCallback((keys: Set<React.Key>) => { const selectedAction = Array.from(keys)[0]?.toString() || ''; setFiltroAccion(selectedAction); setCurrentPage(1); }, []);
+  // CORREGIDO: Usar tipo SharedSelection y extraer valor
+  const handleActionFilterChange = useCallback((keys: SharedSelection) => {
+    let selectedAction = '';
+    if (keys === 'all') {
+        // Manejar caso "all" si tu librería lo usa, aquí asumimos que no
+        selectedAction = '';
+    } else if (keys instanceof Set) {
+        selectedAction = Array.from(keys)[0]?.toString() || '';
+    }
+    setFiltroAccion(selectedAction);
+    setCurrentPage(1);
+  }, []);
+
+  // Preparar datos para el Select de Acciones
+  const uniqueActionsData = useMemo(() => {
+      return [
+          { key: "", label: "Todas" },
+          ...uniqueActions.map(action => ({ key: action, label: action }))
+      ];
+  }, [uniqueActions]);
 
   // --- JSX ---
   return (
@@ -118,9 +124,23 @@ const HistorialPage: React.FC = () => {
        {/* Filtros */}
        <Card className="dark:bg-gray-800 mb-6"><CardBody>
          <div className="flex flex-wrap gap-4 items-end">
-           <Select label="Filtrar por Acción" placeholder="Todas" size="sm" variant="bordered" selectedKeys={filtroAccion ? new Set([filtroAccion]) : undefined} onSelectionChange={handleActionFilterChange} className="max-w-xs" aria-label="Filtrar Acción">
-               <SelectItem key="" value="">Todas</SelectItem>
-               {uniqueActions.map((action) => (<SelectItem key={action} value={action}>{action}</SelectItem>))}
+           {/* CORREGIDO: Select Acción usa 'items' prop */}
+           <Select
+                items={uniqueActionsData}
+                label="Filtrar por Acción"
+                placeholder="Todas"
+                size="sm"
+                variant="bordered"
+                selectedKeys={filtroAccion ? new Set([filtroAccion]) : new Set([''])}
+                onSelectionChange={handleActionFilterChange}
+                className="max-w-xs"
+                aria-label="Filtrar Acción"
+            >
+               {(item) => (
+                    <SelectItem key={item.key} textValue={item.label}>
+                        {item.label}
+                    </SelectItem>
+                )}
            </Select>
            <Input label="Fecha Inicio" type="date" size="sm" value={filtroFechaInicio} onValueChange={setFiltroFechaInicio} className="max-w-xs" variant="bordered" placeholder=" "/>
            <Input label="Fecha Fin" type="date" size="sm" value={filtroFechaFin} onValueChange={setFiltroFechaFin} className="max-w-xs" variant="bordered" placeholder=" "/>
@@ -138,4 +158,4 @@ const HistorialPage: React.FC = () => {
     </div>
   );
 };
-export default HistorialPage; // Exportar
+export default HistorialPage;
