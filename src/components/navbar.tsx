@@ -1,7 +1,8 @@
+// src/components/navbar.tsx (con Kbd e Input comentados ya que no se usan)
 import { Button } from "@heroui/button";
-import { Kbd } from "@heroui/kbd";
+// import { Kbd } from "@heroui/kbd"; // Comentado - TS6133 No se usa
 import { Link } from "@heroui/link";
-import { Input } from "@heroui/input";
+// import { Input } from "@heroui/input"; // Comentado - TS6133 No se usa
 import {
   Navbar as HeroUINavbar,
   NavbarBrand,
@@ -15,7 +16,8 @@ import { link as linkStyles } from "@heroui/theme";
 import clsx from "clsx";
 
 import { siteConfig } from "@/config/site";
-import { ThemeSwitch } from "@/components/theme-switch";
+// import { ThemeSwitch } from "@/components/theme-switch";
+/*
 import {
   TwitterIcon,
   GithubIcon,
@@ -24,28 +26,32 @@ import {
   SearchIcon,
 } from "@/components/icons";
 import { Logo } from "@/components/icons";
+*/
 
 export const Navbar = () => {
+  /*
   const searchInput = (
-    <Input
+    <Input // Input no se usaría aquí si la importación está comentada
       aria-label="Search"
       classNames={{
         inputWrapper: "bg-default-100",
         input: "text-sm",
       }}
       endContent={
-        <Kbd className="hidden lg:inline-block" keys={["command"]}>
+        <Kbd className="hidden lg:inline-block" keys={["command"]}> // Kbd no se usaría aquí
           K
         </Kbd>
       }
       labelPlacement="outside"
       placeholder="Search..."
       startContent={
-        <SearchIcon className="text-base text-default-400 pointer-events-none flex-shrink-0" />
+        // <SearchIcon className="text-base text-default-400 pointer-events-none flex-shrink-0" />
+        <div>S</div>
       }
       type="search"
     />
   );
+  */
 
   return (
     <HeroUINavbar maxWidth="xl" position="sticky">
@@ -56,7 +62,7 @@ export const Navbar = () => {
             color="foreground"
             href="/"
           >
-            <Logo />
+            {/* <Logo /> */}
             <p className="font-bold text-inherit">ACME</p>
           </Link>
         </NavbarBrand>
@@ -83,6 +89,7 @@ export const Navbar = () => {
         justify="end"
       >
         <NavbarItem className="hidden sm:flex gap-2">
+          {/*
           <Link isExternal href={siteConfig.links.twitter} title="Twitter">
             <TwitterIcon className="text-default-500" />
           </Link>
@@ -93,15 +100,16 @@ export const Navbar = () => {
             <GithubIcon className="text-default-500" />
           </Link>
           <ThemeSwitch />
+          */}
         </NavbarItem>
-        <NavbarItem className="hidden lg:flex">{searchInput}</NavbarItem>
+        {/* <NavbarItem className="hidden lg:flex">{searchInput}</NavbarItem> */}
         <NavbarItem className="hidden md:flex">
           <Button
             isExternal
             as={Link}
             className="text-sm font-normal text-default-600 bg-default-100"
             href={siteConfig.links.sponsor}
-            startContent={<HeartFilledIcon className="text-danger" />}
+            // startContent={<HeartFilledIcon className="text-danger" />}
             variant="flat"
           >
             Sponsor
@@ -110,15 +118,17 @@ export const Navbar = () => {
       </NavbarContent>
 
       <NavbarContent className="sm:hidden basis-1 pl-4" justify="end">
+        {/*
         <Link isExternal href={siteConfig.links.github}>
           <GithubIcon className="text-default-500" />
         </Link>
         <ThemeSwitch />
+        */}
         <NavbarMenuToggle />
       </NavbarContent>
 
       <NavbarMenu>
-        {searchInput}
+        {/* {searchInput} */}
         <div className="mx-4 mt-2 flex flex-col gap-2">
           {siteConfig.navMenuItems.map((item, index) => (
             <NavbarMenuItem key={`${item}-${index}`}>

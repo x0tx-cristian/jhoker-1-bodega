@@ -1,3 +1,37 @@
+/* En src/styles/globals.css o tu archivo CSS principal */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Animación del Degradado de Fondo para Login */
+@keyframes gradient-xy {
+  0%, 100% { background-position: 0% 50%; }
+  25% { background-position: 100% 0%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
+}
+/* La clase .animate-gradient-xy se aplicará en LoginPage.tsx */
+
+/* Animación de Formas Flotantes para Login */
+@keyframes float {
+  0% { 
+    transform: translate(var(--x-start, -50%), var(--y-start, -50%)) 
+               rotate(var(--rotate-start, 0deg)) 
+               scale(var(--scale-start, 0.7)); 
+    opacity: var(--opacity-start, 0.05);
+  }
+  50% { 
+    transform: translate(var(--x-mid, -50%), var(--y-mid, -50%)) 
+               rotate(var(--rotate-mid, 180deg)) 
+               scale(var(--scale-mid, 1.2)); 
+    opacity: var(--opacity-mid, 0.25);
+  }
+  100% { 
+    transform: translate(var(--x-end, -50%), var(--y-end, -50%)) 
+               rotate(var(--rotate-end, 360deg)) 
+               scale(var(--scale-end, 0.7)); 
+    opacity: var(--opacity-end, 0.05);
+  }
+}
+/* Las clases .animate-float y .animate-float-alt se aplicarán en LoginPage.tsx */

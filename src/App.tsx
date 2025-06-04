@@ -1,229 +1,13 @@
-// // // src/App.tsx (FINAL v16 - Importa useCallback + Completo)
-// // import React, { useState, useMemo, useCallback } from 'react'; // <-- Añadir useCallback
-// // import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
-// // import {
-// //     HeroUIProvider, Navbar, NavbarBrand, NavbarContent, NavbarItem, Button,
-// //     User as HeroUser, Tooltip, Link as UILink,
-// //     NavbarMenuToggle, NavbarMenu, NavbarMenuItem,
-// //     Spinner
-// // } from '@heroui/react';
-// // import { AuthProvider, useAuth } from './contexts/AuthContext';
-// // import ProtectedRoute from './routes/ProtectedRoute';
-// // import LoginPage from './pages/LoginPage';
-// // import DashboardPage from './pages/DashboardPage';
-// // import ReferenciasPage from './pages/ReferenciasPage';
-// // import UbicacionesPage from './pages/UbicacionesPage';
-// // import CajasPage from './pages/CajasPage';
-// // import HistorialPage from './pages/HistorialPage';
-// // // import { AcmeLogo } from './components/icons/AcmeLogo';
-
-// // // --- Componente Layout Principal (Usa useCallback) ---
-// // const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-// //     const { logout, isAuthenticated, userId, rolId, rolNombre } = useAuth();
-// //     const navigate = useNavigate();
-// //     const location = useLocation();
-// //     const [isMenuOpen, setIsMenuOpen] = useState(false);
-// //     const handleLogout = () => { logout(); navigate('/login'); };
-// //     const isAdmin = rolId === 1; const isOperarioPT = rolId === 2; const isOperarioInsumos = rolId === 3;
-// //     const displayUserName = useMemo(() => ( userId ? (userId.includes('@') ? userId.split('@')[0] : userId.substring(0, 8) + '...') : 'Usuario' ), [userId]);
-// //     const menuItems = useMemo(() => [ { name: "Dashboard", href: "/", roles: [1, 2, 3] }, { name: "Cajas", href: "/cajas", roles: [1, 2, 3] }, { name: "Ubicaciones", href: "/ubicaciones", roles: [1, 2] }, { name: "Referencias", href: "/referencias", roles: [1] }, { name: "Historial", href: "/historial", roles: [1] }, ], []);
-// //     const accessibleMenuItems = useMemo(() => ( menuItems.filter(item => rolId !== null && item.roles.includes(rolId)) ), [menuItems, rolId]);
-// //     // Usar useCallback para la función isLinkActive
-// //     const isLinkActive = useCallback((path: string) => location.pathname === path, [location.pathname]);
-
-// //     return (
-// //         <div className="flex flex-col min-h-screen">
-// //             {isAuthenticated && (
-// //                  <Navbar isBordered isMenuOpen={isMenuOpen} onMenuOpenChange={setIsMenuOpen} maxWidth="full" className="dark:bg-gray-800 print:hidden">
-// //                     <NavbarContent justify="start"> <NavbarMenuToggle aria-label={isMenuOpen ? "Cerrar" : "Abrir"} className="sm:hidden dark:text-white" /> <NavbarBrand> <p className="font-bold text-inherit dark:text-white">JHOKER Bodega</p> </NavbarBrand> </NavbarContent>
-// //                     <NavbarContent className="hidden sm:flex gap-4" justify="center"> {accessibleMenuItems.map((item) => ( <NavbarItem key={item.href} isActive={isLinkActive(item.href)}> <UILink as={Link} to={item.href} size="sm" className={`nav-link ${isLinkActive(item.href) ? 'font-bold text-primary' : 'dark:text-gray-300'}`}> {item.name} </UILink> </NavbarItem> ))} </NavbarContent>
-// //                     <NavbarContent justify="end"> {userId && rolNombre && ( <NavbarItem className="hidden lg:flex"><Tooltip content={`ID: ${userId}`}><HeroUser name={displayUserName} description={rolNombre} /></Tooltip></NavbarItem> )} <NavbarItem> <Button size="sm" color="danger" variant="flat" onPress={handleLogout}> Cerrar Sesión </Button> </NavbarItem> </NavbarContent>
-// //                     <NavbarMenu className="dark:bg-gray-800 bg-opacity-95 pt-6"> {accessibleMenuItems.map((item, index) => ( <NavbarMenuItem key={`${item.name}-${index}`}> <UILink as={Link} color={isLinkActive(item.href) ? "primary" : "foreground"} className="w-full dark:text-white" to={item.href} size="lg" onClick={() => setIsMenuOpen(false)}> {item.name} </UILink> </NavbarMenuItem> ))} <NavbarMenuItem className="mt-auto pt-4 border-t dark:border-gray-700"> <Button size="md" color="danger" variant="flat" onPress={handleLogout} className="w-full"> Cerrar Sesión </Button> </NavbarMenuItem> </NavbarMenu>
-// //                 </Navbar>
-// //             )}
-// //             <style>{`.nav-link { padding: 0.5rem 0.8rem; border-radius: 0.375rem; transition: background-color 0.2s ease-in-out; } .nav-link:hover { background-color: rgba(128, 128, 128, 0.1); color: #60A5FA; }`}</style>
-// //             <main className="flex-grow dark text-foreground bg-background p-4 md:p-6"> {children} </main>
-// //         </div>
-// //     );
-// // };
-
-// // // --- Componente App Principal (Define Rutas según Rol) ---
-// // function App() {
-// //   console.log("Renderizando App vFinal con useCallback");
-// //   const { rolId, isLoading: isLoadingAuth } = useAuth();
-// //   const isAdmin = rolId === 1; const isOperarioPT = rolId === 2; const isOperarioInsumos = rolId === 3;
-
-// //   if (isLoadingAuth) { return (<div className="flex justify-center items-center min-h-screen dark:bg-gray-900"><Spinner size="lg" label="Iniciando..." /></div>); }
-
-// //   return (
-// //     <Routes>
-// //       <Route path="/login" element={<LoginPage />} />
-// //       <Route element={<ProtectedRoute />}>
-// //         <Route path="/" element={ <MainLayout><DashboardPage /></MainLayout> } />
-// //         {(isAdmin || isOperarioPT || isOperarioInsumos) && <Route path="/cajas" element={<MainLayout><CajasPage /></MainLayout>} />}
-// //         {(isAdmin || isOperarioPT) && <Route path="/ubicaciones" element={<MainLayout><UbicacionesPage /></MainLayout>} />}
-// //         {isAdmin && <Route path="/referencias" element={<MainLayout><ReferenciasPage /></MainLayout>} />}
-// //         {isAdmin && <Route path="/historial" element={<MainLayout><HistorialPage /></MainLayout>} />}
-// //         <Route path="*" element={<MainLayout><div><h1 className="text-xl text-danger">404</h1><p>Página no encontrada.</p><Link to="/" className="text-primary">Inicio</Link></div></MainLayout>} />
-// //       </Route>
-// //     </Routes>
-// //   );
-// // }
-// // export default App;
-
-// // src/App.tsx (FINAL v18 - Limpio de TS6133 + Completo)
-// import React, { useMemo, useCallback, useState } from 'react';
-// import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
-// import {
-//     Navbar, NavbarBrand, NavbarContent, NavbarItem, Button,
-//     User as HeroUser, Tooltip, Link as UILink, // Usaremos UILink de HeroUI/NextUI para NavbarItem
-//     NavbarMenuToggle, NavbarMenu, NavbarMenuItem, Spinner
-// } from "@heroui/react"; // Quitado HeroUIProvider, va en main.tsx
-// // No necesitamos AuthProvider aquí, se usa en main.tsx
-// import { useAuth } from './contexts/AuthContext'; // Solo useAuth
-// import ProtectedRoute from './routes/ProtectedRoute';
-// // Importar todas las páginas
-// import LoginPage from './pages/LoginPage';
-// import DashboardPage from './pages/DashboardPage';
-// import ReferenciasPage from './pages/ReferenciasPage';
-// import UbicacionesPage from './pages/UbicacionesPage';
-// import CajasPage from './pages/CajasPage';
-// import HistorialPage from './pages/HistorialPage';
-// // import { AcmeLogo } from './components/icons/AcmeLogo'; // Opcional, comentar si no se usa
-
-// // --- Componente Layout Principal (Navbar y Contenido) ---
-// const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-//     const { logout, isAuthenticated, userId, rolId, rolNombre } = useAuth();
-//     const navigate = useNavigate();
-//     const location = useLocation();
-//     const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-//     const handleLogout = () => { logout(); navigate('/login'); };
-
-//     // Roles para legibilidad y control de UI (Usados para filtrar menuItems)
-//     const isAdminLayout = useMemo(() => rolId === 1, [rolId]);
-//     const isOperarioPTLayout = useMemo(() => rolId === 2, [rolId]);
-//     const isOperarioInsumosLayout = useMemo(() => rolId === 3, [rolId]);
-
-//     // Nombre corto para UI
-//     const displayUserName = useMemo(() => (
-//         userId ? (userId.includes('@') ? userId.split('@')[0] : userId.substring(0, 8) + '...') : 'Usuario'
-//     ), [userId]);
-
-//     // Definir items del menú con sus rutas y roles permitidos
-//     const menuItems = useMemo(() => [
-//         { name: "Dashboard", href: "/", roles: [1, 2, 3] }, // Todos
-//         { name: "Cajas", href: "/cajas", roles: [1, 2, 3] }, // Todos
-//         { name: "Ubicaciones", href: "/ubicaciones", roles: [1, 2] }, // Admin y Op PT
-//         { name: "Referencias", href: "/referencias", roles: [1] }, // Solo Admin
-//         { name: "Historial", href: "/historial", roles: [1] }, // Solo Admin
-//     ], []);
-
-//     // Filtrar menú según el rol actual
-//     const accessibleMenuItems = useMemo(() => (
-//         menuItems.filter(item => rolId !== null && item.roles.includes(rolId))
-//     ), [menuItems, rolId]);
-
-//     const isLinkActive = useCallback((path: string) => location.pathname === path, [location.pathname]);
-
-//     return (
-//         <div className="flex flex-col min-h-screen">
-//             {isAuthenticated && (
-//                  <Navbar
-//                     isBordered isMenuOpen={isMenuOpen} onMenuOpenChange={setIsMenuOpen}
-//                     maxWidth="full" className="dark:bg-gray-800 print:hidden" // Ocultar Navbar al imprimir
-//                  >
-//                     <NavbarContent justify="start">
-//                         <NavbarMenuToggle aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"} className="sm:hidden dark:text-white" />
-//                         <NavbarBrand> <p className="font-bold text-inherit dark:text-white">JHOKER Bodega</p> </NavbarBrand>
-//                     </NavbarContent>
-
-//                     <NavbarContent className="hidden sm:flex gap-4" justify="center">
-//                         {accessibleMenuItems.map((item) => (
-//                             <NavbarItem key={item.href} isActive={isLinkActive(item.href)}>
-//                                 {/* Usar UILink de HeroUI/NextUI dentro del Link de react-router-dom */}
-//                                 <UILink as={Link} to={item.href} size="sm" className={`nav-link ${isLinkActive(item.href) ? 'font-bold text-primary dark:text-primary-400' : 'dark:text-gray-300'}`}>
-//                                     {item.name}
-//                                 </UILink>
-//                             </NavbarItem>
-//                         ))}
-//                     </NavbarContent>
-
-//                     <NavbarContent justify="end">
-//                         {userId && rolNombre && ( <NavbarItem className="hidden lg:flex"><Tooltip content={`ID: ${userId}`} placement="bottom" delay={200}><HeroUser name={displayUserName} description={rolNombre} classNames={{description: "text-xs"}}/></Tooltip></NavbarItem> )}
-//                         <NavbarItem> <Button size="sm" color="danger" variant="flat" onPress={handleLogout}> Cerrar Sesión </Button> </NavbarItem>
-//                     </NavbarContent>
-
-//                     {/* Menú Desplegable para Móviles */}
-//                     <NavbarMenu className="dark:bg-gray-800 bg-opacity-95 pt-6">
-//                         {accessibleMenuItems.map((item, index) => (
-//                         <NavbarMenuItem key={`${item.name}-${index}`}>
-//                             <UILink as={Link} color={isLinkActive(item.href) ? "primary" : "foreground"} className="w-full dark:text-white text-lg py-2 block" to={item.href} onClick={() => setIsMenuOpen(false)}> {/* Ajustado estilo y onClick */}
-//                                 {item.name}
-//                             </UILink>
-//                         </NavbarMenuItem>
-//                         ))}
-//                          <NavbarMenuItem className="mt-auto pt-4 border-t dark:border-gray-700">
-//                              <Button size="md" color="danger" variant="flat" onPress={() => {handleLogout(); setIsMenuOpen(false);}} className="w-full"> Cerrar Sesión </Button>
-//                          </NavbarMenuItem>
-//                     </NavbarMenu>
-//                 </Navbar>
-//             )}
-//             {/* Estilos (pueden ir a un CSS global) */}
-//             <style>{`.nav-link { padding: 0.5rem 0.8rem; border-radius: 0.375rem; /* rounded-md */ transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out; } .nav-link:hover { background-color: rgba(128, 128, 128, 0.1); /* Gris muy transparente */ }`}</style>
-//             <main className="flex-grow dark text-foreground bg-background p-4 md:p-6"> {children} </main>
-//         </div>
-//     );
-// };
-
-
-// // --- Componente App Principal (Define Rutas) ---
-// function App() {
-//   console.log("Renderizando App vFinal con Rutas Condicionales y Spinner (v18)");
-//   const { rolId, isLoading: isLoadingAuth } = useAuth(); // Usar isLoading del Auth
-
-//   // Determinar roles para renderizado condicional de rutas
-//   const isAdminApp = rolId === 1;
-//   const isOperarioPTApp = rolId === 2;
-//   // const isOperarioInsumosApp = rolId === 3; // No se usa directamente aquí para ocultar rutas, se filtra en CajasPage
-
-//   // Spinner mientras se carga la sesión
-//   if (isLoadingAuth) {
-//       return (<div className="flex justify-center items-center min-h-screen dark:bg-gray-900"><Spinner size="lg" label="Iniciando Aplicación..." labelColor="primary" /></div>);
-//   }
-
-//   return (
-//     // BrowserRouter y Providers globales están en src/main.tsx
-//     <Routes>
-//       <Route path="/login" element={<LoginPage />} />
-//       <Route element={<ProtectedRoute />}>
-//         <Route path="/" element={ <MainLayout><DashboardPage /></MainLayout> } />
-//         {/* Cajas: Visible para todos los roles logueados (filtrado interno) */}
-//         <Route path="/cajas" element={<MainLayout><CajasPage /></MainLayout>} />
-//         {/* Ubicaciones: Admin y Operario PT */}
-//         {(isAdminApp || isOperarioPTApp) && (
-//           <Route path="/ubicaciones" element={<MainLayout><UbicacionesPage /></MainLayout>} />
-//         )}
-//         {/* Referencias y Historial: Solo Admin */}
-//         {isAdminApp && <Route path="/referencias" element={<MainLayout><ReferenciasPage /></MainLayout>} />}
-//         {isAdminApp && <Route path="/historial" element={<MainLayout><HistorialPage /></MainLayout>} />}
-//         {/* Fallback */}
-//         <Route path="*" element={<MainLayout><div><h1 className="text-xl text-danger mb-2">404 - No Encontrado</h1><p className="dark:text-gray-400">La página no existe o no tiene permiso.</p><Button as={Link} to="/" color="primary" variant="ghost" className="mt-6">Inicio</Button></div></MainLayout>} />
-//       </Route>
-//     </Routes>
-//   );
-// }
-// export default App;
-
-
-// src/App.tsx (FINAL v19 - Limpio de TS6133 en MainLayout + Completo)
+// src/App.tsx
 import React, { useMemo, useCallback, useState } from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
     Navbar, NavbarBrand, NavbarContent, NavbarItem, Button,
-    User as HeroUser, Tooltip, Link as UILink,
-    NavbarMenuToggle, NavbarMenu, NavbarMenuItem, Spinner
+    User as HeroUser, Link as UILink, // Tooltip se importa y usa dentro de Dropdown, no necesita estar aquí
+    NavbarMenuToggle, NavbarMenu, NavbarMenuItem, Spinner, Image, 
+    Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Avatar
 } from '@heroui/react';
+import { ChevronDownIcon, LogoutIcon } from './components/icons';
 import { useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './routes/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
@@ -233,78 +17,215 @@ import UbicacionesPage from './pages/UbicacionesPage';
 import CajasPage from './pages/CajasPage';
 import HistorialPage from './pages/HistorialPage';
 
-// --- Componente Layout Principal ---
+// --- Componente Layout Principal (Navbar y Contenido) ---
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { logout, isAuthenticated, userId, rolId, rolNombre } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    const handleLogout = () => { logout(); navigate('/login'); };
+    const handleLogout = () => { 
+        logout(); 
+        setIsMenuOpen(false); 
+        navigate('/login'); 
+    };
 
-    // Estas variables de rol individuales NO se usan directamente para renderizar NavbarItems
-    // const isAdminLayout = useMemo(() => rolId === 1, [rolId]);
-    // const isOperarioPTLayout = useMemo(() => rolId === 2, [rolId]);
-    // const isOperarioInsumosLayout = useMemo(() => rolId === 3, [rolId]);
+    const handleBrandClick = () => {
+        navigate('/');
+        setIsMenuOpen(false);
+    };
 
-    const displayUserName = useMemo(() => ( userId ? (userId.includes('@') ? userId.split('@')[0] : userId.substring(0, 8) + '...') : 'Usuario' ), [userId]);
+    const displayUserName = useMemo(() => ( userId ? (userId.includes('@') ? userId.split('@')[0] : userId.substring(0,12)) : 'Usuario' ), [userId]);
+    const userInitials = useMemo(() => displayUserName.substring(0,2).toUpperCase(), [displayUserName]);
 
-    // Definir items del menú con sus rutas y roles permitidos
     const menuItems = useMemo(() => [
-        { name: "Dashboard", href: "/", roles: [1, 2, 3] }, // Todos
-        { name: "Cajas", href: "/cajas", roles: [1, 2, 3] }, // Todos
-        { name: "Ubicaciones", href: "/ubicaciones", roles: [1, 2] }, // Admin y Op PT
-        { name: "Referencias", href: "/referencias", roles: [1] }, // Solo Admin
-        { name: "Historial", href: "/historial", roles: [1] }, // Solo Admin
+        { name: "Dashboard", href: "/", roles: [1, 2, 3] },
+        { name: "Cajas", href: "/cajas", roles: [1, 2, 3] },
+        { name: "Ubicaciones", href: "/ubicaciones", roles: [1, 2] },
+        { name: "Referencias", href: "/referencias", roles: [1] },
+        { name: "Historial", href: "/historial", roles: [1] },
     ], []);
 
-    // Filtrar menú según el rol actual (ESTA es la lógica que se usa)
     const accessibleMenuItems = useMemo(() => (
         menuItems.filter(item => rolId !== null && item.roles.includes(rolId))
     ), [menuItems, rolId]);
 
-    const isLinkActive = useCallback((path: string) => location.pathname === path, [location.pathname]);
+    const isLinkActive = useCallback((path: string) => {
+        if (path === "/") return location.pathname === "/";
+        return location.pathname.startsWith(path) && path !== "/";
+    }, [location.pathname]);
 
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-screen bg-slate-100 dark:bg-slate-900">
             {isAuthenticated && (
-                 <Navbar isBordered isMenuOpen={isMenuOpen} onMenuOpenChange={setIsMenuOpen} maxWidth="full" className="dark:bg-gray-800 print:hidden">
-                    <NavbarContent justify="start"> <NavbarMenuToggle aria-label={isMenuOpen ? "Cerrar" : "Abrir"} className="sm:hidden dark:text-white" /> <NavbarBrand> <p className="font-bold text-inherit dark:text-white">JHOKER Bodega</p> </NavbarBrand> </NavbarContent>
-                    <NavbarContent className="hidden sm:flex gap-4" justify="center">
-                        {accessibleMenuItems.map((item) => ( // Usa accessibleMenuItems
+                 <Navbar 
+                    isBordered 
+                    isMenuOpen={isMenuOpen} 
+                    onMenuOpenChange={setIsMenuOpen} 
+                    maxWidth="full" 
+                    className="bg-slate-50/80 dark:bg-slate-800/80 backdrop-blur-lg dark:backdrop-blur-lg shadow-lg print:hidden sticky top-0 z-50 border-b border-slate-300/70 dark:border-slate-700/70"
+                    height="4.5rem" 
+                 >
+                    {/* Lado Izquierdo: Toggle y Marca */}
+                    <NavbarContent justify="start" className="gap-2 md:gap-4 items-center">
+                        <NavbarMenuToggle 
+                            aria-label={isMenuOpen ? "Cerrar menú" : "Abrir menú"} 
+                            className="sm:hidden text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md p-1.5" 
+                        />
+                        <NavbarBrand className="gap-3 items-center cursor-pointer mr-2 sm:mr-0" onClick={handleBrandClick}>
+                            <Image 
+                                src="/Logo-jhoker.svg" 
+                                alt="JHOKER Logo"
+                                width={130} 
+                                height={40} 
+                                className="object-contain flex-shrink-0"
+                            />
+                            <p className="font-bold text-xl text-slate-800 dark:text-white hidden md:block">
+                                JHOKER Bodega
+                            </p>
+                        </NavbarBrand>
+                    </NavbarContent>
+
+                    {/* Centro: Links de Navegación (Desktop) */}
+                    <NavbarContent className="hidden sm:flex gap-1" justify="center">
+                        {accessibleMenuItems.map((item) => (
                             <NavbarItem key={item.href} isActive={isLinkActive(item.href)}>
-                                <UILink as={Link} to={item.href} size="sm" className={`nav-link ${isLinkActive(item.href) ? 'font-bold text-primary dark:text-primary-400' : 'dark:text-gray-300'}`}> {item.name} </UILink>
+                                <Button
+                                    as={Link}
+                                    to={item.href}
+                                    size="md"
+                                    variant="light"
+                                    className={`font-medium text-sm px-4 py-2 rounded-lg transition-colors
+                                                ${isLinkActive(item.href) 
+                                                    ? "text-sky-500 dark:text-sky-400 bg-sky-500/10 dark:bg-sky-400/10 ring-1 ring-sky-500/30 dark:ring-sky-400/30" 
+                                                    : "text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white"
+                                                }`}
+                                >
+                                    {item.name}
+                                </Button>
                             </NavbarItem>
                         ))}
                     </NavbarContent>
-                    <NavbarContent justify="end"> {userId && rolNombre && ( <NavbarItem className="hidden lg:flex"><Tooltip content={`ID: ${userId}`} placement="bottom" delay={200}><HeroUser name={displayUserName} description={rolNombre} classNames={{description: "text-xs"}}/></Tooltip></NavbarItem> )} <NavbarItem> <Button size="sm" color="danger" variant="flat" onPress={handleLogout}> Cerrar Sesión </Button> </NavbarItem> </NavbarContent>
-                    <NavbarMenu className="dark:bg-gray-800 bg-opacity-95 pt-6">
-                        {accessibleMenuItems.map((item, index) => ( // Usa accessibleMenuItems
-                        <NavbarMenuItem key={`${item.name}-${index}`}>
-                            <UILink as={Link} color={isLinkActive(item.href) ? "primary" : "foreground"} className="w-full dark:text-white text-lg py-2 block" to={item.href} onClick={() => setIsMenuOpen(false)}> {item.name} </UILink>
+
+                    {/* Lado Derecho: Usuario y Logout (Desktop) */}
+                    {/* ESTA SECCIÓN ES PARA DESKTOP, SE OCULTA EN MÓVIL (sm y menor) */}
+                    <NavbarContent justify="end" className="hidden sm:flex items-center">
+                        {userId && rolNombre && ( 
+                            <Dropdown placement="bottom-end" backdrop="blur" radius="lg" shadow="md" 
+                                classNames={{
+                                    trigger: "p-0", // Quitar padding del trigger si es un botón
+                                    content: "dark:bg-slate-800/95 border border-slate-700/50"
+                                }}
+                            >
+                                <DropdownTrigger>
+                                    {/* Usamos un div simple como trigger para aplicar hover al grupo */}
+                                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700/80 transition-colors">
+                                        <Avatar
+                                          size="sm"
+                                          isBordered
+                                          src={undefined} 
+                                          name={userInitials}
+                                          color="secondary"
+                                          className="ring-1 ring-offset-1 ring-offset-white dark:ring-offset-slate-800 ring-secondary-300 dark:ring-secondary-500 transition-transform group-data-[hover=true]:scale-105 flex-shrink-0"
+                                        />
+                                        {/* El texto del usuario solo se muestra en 'md' y más grandes DENTRO de este bloque 'sm:flex' */}
+                                        <div className="hidden md:flex flex-col items-start">
+                                            <span className="text-sm font-semibold text-slate-700 dark:text-slate-100">{displayUserName}</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">{rolNombre}</span>
+                                        </div>
+                                        <ChevronDownIcon className="ml-1 w-4 h-4 text-slate-500 dark:text-slate-400" />
+                                    </div>
+                                </DropdownTrigger>
+                                <DropdownMenu 
+                                    aria-label="User Actions" 
+                                    variant="flat"
+                                    disabledKeys={["user_info_header"]}
+                                    onAction={(key) => { if (key === "logout") handleLogout(); }}
+                                    itemClasses={{
+                                        base: "gap-3 data-[hover=true]:bg-slate-100 dark:data-[hover=true]:bg-slate-700/50 rounded-lg",
+                                        title: "font-medium text-sm",
+                                    }}
+                                    className="min-w-[230px] p-1"
+                                >
+                                    <DropdownItem key="user_info_header" isReadOnly className="h-auto py-2.5 px-3 gap-2 opacity-100 cursor-default border-b border-slate-200 dark:border-slate-700/50 mb-1" textValue={`Info: ${userId}`}>
+                                        <p className="font-semibold text-sm text-slate-700 dark:text-slate-200">Sesión Activa</p>
+                                        <p className="text-xs text-primary dark:text-primary-400 font-mono break-all max-w-[190px] truncate" title={userId || ""}>{userId}</p>
+                                    </DropdownItem>
+                                    <DropdownItem key="logout" className="text-danger-500 dark:text-danger-400" color="danger" startContent={<LogoutIcon className="w-5 h-5"/>}>
+                                        Cerrar Sesión
+                                    </DropdownItem>
+                                </DropdownMenu>
+                            </Dropdown>
+                        )}
+                    </NavbarContent>
+
+                    {/* Menú Móvil */}
+                    <NavbarMenu className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl pt-2 pb-4 space-y-1 shadow-2xl border-r border-slate-200 dark:border-slate-700/60">
+                        {isAuthenticated && userId && rolNombre && (
+                            <NavbarMenuItem className="border-b border-slate-200 dark:border-slate-700 pb-3 mb-3 px-2">
+                                 <HeroUser 
+                                    name={displayUserName} 
+                                    description={rolNombre} 
+                                    avatarProps={{ 
+                                        size: "md", 
+                                        isBordered: true, 
+                                        name: userInitials, 
+                                        color: "secondary" 
+                                    }}
+                                    classNames={{ 
+                                        name: "text-base font-semibold text-slate-700 dark:text-white",
+                                        description: "text-sm text-slate-500 dark:text-slate-300" 
+                                    }}
+                                />
+                            </NavbarMenuItem>
+                        )}
+                        {accessibleMenuItems.map((item) => (
+                        <NavbarMenuItem key={item.href}>
+                            <UILink 
+                                as={Link} 
+                                className={`w-full block px-3 py-3 rounded-lg text-lg font-medium transition-all duration-150 ease-in-out
+                                            ${isLinkActive(item.href) 
+                                                ? "bg-sky-600 text-white dark:bg-sky-500 dark:text-white shadow-md scale-105"
+                                                : "text-slate-800 dark:text-white hover:bg-slate-200/70 dark:hover:bg-slate-700/70" 
+                                            }`}
+                                to={item.href} 
+                                onClick={() => setIsMenuOpen(false)}
+                            >
+                                {item.name}
+                            </UILink>
                         </NavbarMenuItem>
                         ))}
-                         <NavbarMenuItem className="mt-auto pt-4 border-t dark:border-gray-700"> <Button size="md" color="danger" variant="flat" onPress={() => {handleLogout(); setIsMenuOpen(false);}} className="w-full"> Cerrar Sesión </Button> </NavbarMenuItem>
+                         <NavbarMenuItem className="mt-6 pt-3 border-t border-slate-200 dark:border-slate-700"> 
+                             <Button 
+                                 size="lg"
+                                 color="danger" 
+                                 variant="light" 
+                                 onPress={handleLogout} 
+                                 className="w-full font-semibold text-danger-500 dark:text-danger-300 hover:bg-danger-500/10 dark:hover:text-danger-200"
+                                 startContent={<LogoutIcon className="w-5 h-5"/>}
+                             > 
+                                 Cerrar Sesión 
+                             </Button> 
+                         </NavbarMenuItem>
                     </NavbarMenu>
                 </Navbar>
             )}
-            <style>{`.nav-link { padding: 0.5rem 0.8rem; border-radius: 0.375rem; transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out; } .nav-link:hover { background-color: rgba(128, 128, 128, 0.1); }`}</style>
-            <main className="flex-grow dark text-foreground bg-background p-4 md:p-6"> {children} </main>
+            <main className="flex-grow p-4 sm:p-6 md:p-8">
+                {children}
+            </main>
         </div>
     );
 };
 
-// --- Componente App Principal (Define Rutas) ---
+// --- El resto del componente App (lógica de rutas) ---
 function App() {
-  console.log("Renderizando App vFinal (v19)");
+  console.log("Renderizando App vFinal con Navbar v12 (Fix Desktop User Dropdown y TS)");
   const { rolId, isLoading: isLoadingAuth } = useAuth();
 
-  // Variables de rol para renderizado condicional de rutas
   const isAdminApp = rolId === 1;
   const isOperarioPTApp = rolId === 2;
-  // const isOperarioInsumosApp = rolId === 3; // No se usa para ocultar RUTAS directamente aquí
 
-  if (isLoadingAuth) { return (<div className="flex justify-center items-center min-h-screen dark:bg-gray-900"><Spinner size="lg" label="Iniciando..." /></div>); }
+  if (isLoadingAuth) { return (<div className="flex flex-col justify-center items-center min-h-screen bg-slate-100 dark:bg-slate-900"><Spinner size="lg" label="Iniciando Aplicación..." color="primary" /><p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Por favor, espere.</p></div>); }
 
   return (
     <Routes>
@@ -315,7 +236,20 @@ function App() {
         {(isAdminApp || isOperarioPTApp) && (<Route path="/ubicaciones" element={<MainLayout><UbicacionesPage /></MainLayout>} />)}
         {isAdminApp && <Route path="/referencias" element={<MainLayout><ReferenciasPage /></MainLayout>} />}
         {isAdminApp && <Route path="/historial" element={<MainLayout><HistorialPage /></MainLayout>} />}
-        <Route path="*" element={<MainLayout><div><h1 className="text-xl text-danger mb-2">404</h1><p className="dark:text-gray-400">Página no encontrada.</p><Button as={Link} to="/" color="primary" variant="ghost" className="mt-6">Inicio</Button></div></MainLayout>} />
+        <Route path="*" element={
+            <MainLayout>
+                <div className="flex flex-col items-center justify-center text-center h-full py-10 md:py-16">
+                    <Image src="/Logo-jhoker.svg" alt="Error 404" width={120} className="opacity-30 mb-8" />
+                    <h1 className="text-4xl md:text-5xl font-bold text-slate-700 dark:text-slate-200 mb-4">Error 404</h1>
+                    <p className="text-lg md:text-xl text-slate-500 dark:text-slate-400 mb-10 max-w-md">
+                        ¡Vaya! Parece que la página que buscas se ha perdido en la bodega.
+                    </p>
+                    <Button as={Link} to="/" color="primary" size="lg" variant="solid" className="font-semibold px-8 py-3 shadow-md dark:shadow-primary-500/40">
+                        Volver al Inicio
+                    </Button>
+                </div>
+            </MainLayout>} 
+        />
       </Route>
     </Routes>
   );

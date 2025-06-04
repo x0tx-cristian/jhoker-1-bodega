@@ -3,15 +3,15 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Spinner, Card, CardHeader, CardBody, Input, Button,
     Autocomplete, AutocompleteItem, Chip,
-    Table, TableHeader, TableColumn, TableBody, TableRow, TableCell // Asegurar todos los imports de Table
+    Table, TableHeader, TableColumn, TableBody, TableRow, TableCell
 } from "@heroui/react";
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 import {
     AdminDashboardSummary, OperarioPTDashboardSummary, OperarioInsumosDashboardSummary,
-    DashboardSummaryData, Referencia, // Quitado NombreRol
+    DashboardSummaryData, Referencia,
     InventarioPorReferenciaResult,
-    UbicacionCajaInfo, ContenidoCajaDetallado // Quitado Caja, DesgloseCajaInventario (usados en DesgloseInventarioTable)
+    UbicacionCajaInfo, ContenidoCajaDetallado
 } from '../types';
 import SummaryCard from '../components/dashboard/SummaryCard';
 import DesgloseInventarioTable from '../components/dashboard/DesgloseInventarioTable';
@@ -23,7 +23,6 @@ import { SearchIcon } from '../components/icons/SearchIcon';
 import { DeleteIcon } from '../components/icons/DeleteIcon';
 import toast from 'react-hot-toast';
 
-// Interfaz para consulta rápida de caja (sin cambios)
 interface ResultadoConsultaCaja {
     ubicacion: UbicacionCajaInfo | null;
     contenido: ContenidoCajaDetallado[];
@@ -31,7 +30,6 @@ interface ResultadoConsultaCaja {
     eanConsultado: string;
 }
 
-// --- COLUMNAS PARA TABLA DE CONTENIDO CONSULTADO ---
 const consultaContenidoColumns = [
     { key: "descripcion", label: "DESCRIPCIÓN" },
     { key: "talla", label: "TALLA" },
@@ -41,7 +39,6 @@ const consultaContenidoColumns = [
 
 
 const DashboardPage: React.FC = () => {
-  // --- Estados (sin cambios) ---
   const [summaryData, setSummaryData] = useState<DashboardSummaryData>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState(true);
   const [searchInputValue, setSearchInputValue] = useState("");
@@ -56,39 +53,81 @@ const DashboardPage: React.FC = () => {
   const { rolId, rolNombre } = useAuth();
   const isAdmin = useMemo(() => rolId === 1, [rolId]);
 
-  // --- Funciones de Carga (sin cambios) ---
   const getSummaryRpcFunction = useCallback((): string | null => { switch (rolId) { case 1: return 'get_dashboard_summary_admin'; case 2: return 'get_dashboard_summary_operario_pt'; case 3: return 'get_dashboard_summary_operario_insumos'; default: return null; } }, [rolId]);
+  
   const fetchSummaryData = useCallback(async () => { const rpcFunction = getSummaryRpcFunction(); if (!rpcFunction) { setIsLoadingSummary(false); setSummaryData(null); return; } setIsLoadingSummary(true); try { const { data, error } = await supabase.rpc(rpcFunction); if (error) throw error; if (data?.[0]) { setSummaryData(data[0]); } else { setSummaryData(null); } } catch (err: any) { console.error(`Err ${rpcFunction}:`, err); toast.error(`Error resumen: ${err.message}`); setSummaryData(null); } finally { setIsLoadingSummary(false); } }, [getSummaryRpcFunction]);
+  
   const fetchAutocompleteSuggestions = useCallback(async (term: string) => { if (term.length < 2) { setSearchResults([]); return; } setIsLoadingSearch(true); try { const { data, error } = await supabase.rpc('buscar_referencias_autocomplete', { p_termino: term }); if (error) throw error; setSearchResults(data || []); } catch (err: any) { console.error("Err autocomplete:", err); setSearchResults([]); } finally { setIsLoadingSearch(false); } }, []);
-  const fetchInventarioDetalle = useCallback(async (ean: string | null) => { if (!ean) { setInventarioDetalle(null); return; } setIsLoadingInventario(true); setInventarioDetalle(null); try { const { data, error } = await supabase.rpc('get_inventario_por_referencia', { p_ean_referencia_buscada: ean }); if (error) throw error; if (data?.error) { toast.error(data.error); setInventarioDetalle(null); } else { setInventarioDetalle(data as InventarioPorReferenciaResult); } } catch (err: any) { console.error("Err fetch detalle:", err); toast.error(`Error: ${err.message}`); setInventarioDetalle(null); } finally { setIsLoadingInventario(false); } }, []);
+  
+  const fetchInventarioDetalle = useCallback(async (ean: string | null) => {
+    if (!ean) {
+      setInventarioDetalle(null);
+      return;
+    }
+    setIsLoadingInventario(true);
+    setInventarioDetalle(null);
+    console.log(`[DashboardPage] Fetching inventario detalle para EAN: ${ean}`);
+    try {
+      const { data, error, status, statusText } = await supabase.rpc('get_inventario_por_referencia', {
+        p_ean_referencia_buscada: ean
+      });
+
+      console.log('[DashboardPage] RPC get_inventario_por_referencia response:', { data, error, status, statusText });
+
+      if (error) { 
+        console.error("[DashboardPage] Error directo de RPC:", error);
+        toast.error(`Error RPC: ${error.message || 'Desconocido'}`); // Mostrar error de RPC al usuario
+        setInventarioDetalle(null); // Asegurar que se limpia en caso de error
+        // throw error; // Opcional: relanzar si quieres que un ErrorBoundary más arriba lo capture. Por ahora, manejamos aquí.
+        return; // Salir de la función si hay error directo de RPC
+      }
+
+      if (data && typeof data === 'object' && data.hasOwnProperty('error') && data.error) {
+        console.warn("[DashboardPage] Error Lógico devuelto por RPC:", data.error);
+        toast.error(`Error de la función: ${data.error}`);
+        setInventarioDetalle(null);
+      } else if (data) {
+        console.log("[DashboardPage] Detalle de inventario obtenido:", data);
+        setInventarioDetalle(data as InventarioPorReferenciaResult);
+      } else {
+        console.warn("[DashboardPage] RPC no devolvió error, pero tampoco datos válidos.");
+        toast.error("No se pudo obtener el detalle del inventario.");
+        setInventarioDetalle(null);
+      }
+
+    } catch (err: any) { // Este catch atraparía errores no esperados o si relanzas el error de RPC
+      console.error("[DashboardPage] Excepción en fetchInventarioDetalle:", err);
+      toast.error(`Error al buscar detalle: ${err.message || 'Desconocido'}`);
+      setInventarioDetalle(null);
+    } finally {
+      setIsLoadingInventario(false);
+    }
+  }, []);
+
   useEffect(() => { fetchSummaryData(); }, [fetchSummaryData]);
 
-  // --- Manejadores (sin cambios) ---
   const handleSearchInputChange = (value: string) => { setSearchInputValue(value); fetchAutocompleteSuggestions(value); };
   const handleSearchSelectionChange = (key: React.Key | null) => { const ean = key?.toString() ?? null; setSelectedReferenciaEan(ean); fetchInventarioDetalle(ean); };
   const handleClearSearch = () => { setSearchInputValue(''); setSearchResults([]); setSelectedReferenciaEan(null); setInventarioDetalle(null); };
+  
   const handleConsultaCaja = useCallback(async () => { if (!eanCajaConsulta || eanCajaConsulta.length < 10) { toast.error("Ingrese EAN de Caja válido."); return; } setIsLoadingConsulta(true); setResultadoConsulta(null); let errorMsg: string | null = null; let ubicacionResult: UbicacionCajaInfo | null = null; let contenidoResult: ContenidoCajaDetallado[] = []; try { const [ubicRes, contRes] = await Promise.all([ supabase.rpc('get_ubicacion_por_ean_caja', { p_ean_caja: eanCajaConsulta }), supabase.rpc('get_contenido_por_ean_caja', { p_ean_caja: eanCajaConsulta }) ]); if (ubicRes.error) throw new Error(`Error ubicación: ${ubicRes.error.message}`); if (contRes.error) throw new Error(`Error contenido: ${contRes.error.message}`); if (ubicRes.data?.[0]) { ubicacionResult = ubicRes.data[0]; } contenidoResult = (contRes.data as ContenidoCajaDetallado[] | null) || []; if (!ubicacionResult && contenidoResult.length === 0) { errorMsg = "EAN no encontrado o caja vacía/sin ubicación."; } } catch (err: any) { errorMsg = err.message || "Error desconocido"; } finally { setResultadoConsulta({ ubicacion: ubicacionResult, contenido: contenidoResult, error: errorMsg, eanConsultado: eanCajaConsulta }); setIsLoadingConsulta(false); } }, [eanCajaConsulta]);
 
-  // --- Renderizado Tarjetas Resumen (sin cambios) ---
   const renderAdminSummary = (data: AdminDashboardSummary) => ( <> <SummaryCard title="Refs Activas" value={data.total_referencias_activas} isLoading={isLoadingSummary} icon={<DocumentIcon />} /> <SummaryCard title="Ubic PT" value={data.total_ubicaciones_pt_activas} isLoading={isLoadingSummary} icon={<LocationIcon />} color="secondary" /> <SummaryCard title="Ubic Ins" value={data.total_ubicaciones_insumos_activas} isLoading={isLoadingSummary} icon={<LocationIcon />} color="warning" /> <SummaryCard title="Cajas PT" value={data.total_cajas_pt_activas} isLoading={isLoadingSummary} icon={<BoxIcon />} color="secondary" /> <SummaryCard title="Cajas Ins" value={data.total_cajas_insumos_activas} isLoading={isLoadingSummary} icon={<BoxIcon />} color="warning" /> <SummaryCard title="Despachadas" value={data.total_cajas_despachadas} isLoading={isLoadingSummary} icon={<BoxIcon />} color="danger" /> <SummaryCard title="Unidades PT" value={data.total_unidades_pt} isLoading={isLoadingSummary} icon={<PackageIcon />} color="secondary" /> <SummaryCard title="Unidades Ins" value={data.total_unidades_insumos} isLoading={isLoadingSummary} icon={<PackageIcon />} color="warning" /> </> );
   const renderOperarioPTSummary = (data: OperarioPTDashboardSummary) => ( <> <SummaryCard title="Cajas PT Activas" value={data.total_cajas_pt_activas} isLoading={isLoadingSummary} icon={<BoxIcon />} color="secondary" /> <SummaryCard title="Cajas PT Bodega" value={data.total_cajas_pt_en_bodega} isLoading={isLoadingSummary} icon={<BoxIcon />} color="success" /> <SummaryCard title="Cajas PT Sin Ubic" value={data.total_cajas_pt_sin_ubicacion} isLoading={isLoadingSummary} icon={<BoxIcon />} color="warning" /> <SummaryCard title="Ubicaciones PT" value={data.total_ubicaciones_pt_activas} isLoading={isLoadingSummary} icon={<LocationIcon />} color="secondary" /> <SummaryCard title="Unidades PT" value={data.total_unidades_pt} isLoading={isLoadingSummary} icon={<PackageIcon />} color="secondary" /> </> );
   const renderOperarioInsumosSummary = (data: OperarioInsumosDashboardSummary) => ( <> <SummaryCard title="Cajas Insumos" value={data.total_cajas_insumos_activas} isLoading={isLoadingSummary} icon={<BoxIcon />} color="warning" /> <SummaryCard title="Unidades Insumos" value={data.total_unidades_insumos} isLoading={isLoadingSummary} icon={<PackageIcon />} color="warning" /> </> );
 
-  // --- Render Cell para Tabla Consulta Rápida ---
   const renderConsultaCell = useCallback((item: ContenidoCajaDetallado, columnKey: React.Key) => {
     const cellValue = item[columnKey as keyof ContenidoCajaDetallado];
     switch(columnKey) {
         case 'talla': return <div className="text-center">{cellValue ?? '-'}</div>;
         case 'color': return <div className="text-center">{cellValue ?? '-'}</div>;
         case 'cantidad': return <div className="text-right font-semibold">{cellValue}</div>;
-        default: return cellValue; // descripcion
+        default: return cellValue;
     }
   }, []);
 
-  // --- JSX Principal ---
   return (
     <div className="container mx-auto px-4 py-8 flex flex-col gap-8">
-        {/* --- Sección Resumen General --- */}
         <div>
             <h1 className="text-3xl font-bold mb-4 text-gray-800 dark:text-white"> Dashboard {rolNombre ? `(${rolNombre})` : ''} </h1>
             {isLoadingSummary ? ( <div className="flex justify-center p-5"><Spinner size="md" /></div> )
@@ -101,7 +140,6 @@ const DashboardPage: React.FC = () => {
                )}
         </div>
 
-         {/* --- Sección Consulta Rápida Caja --- */}
          <Card shadow="md" className="dark:bg-gray-800">
             <CardHeader> <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Consulta Rápida por EAN de Caja</h2> </CardHeader>
             <CardBody className="flex flex-col gap-4">
@@ -120,7 +158,6 @@ const DashboardPage: React.FC = () => {
                             <div>
                                 <h4 className="text-md font-semibold mb-1 dark:text-gray-200">Contenido:</h4>
                                 {resultadoConsulta.contenido.length > 0 ? (
-                                    // CORREGIDO: Usar la estructura correcta de Table/Header/Body/Column/Row/Cell
                                     <Table removeWrapper isCompact aria-label="Contenido consultado" classNames={{wrapper:"shadow-none p-0", table:"text-xs"}}>
                                         <TableHeader columns={consultaContenidoColumns}>
                                             {(column) => (
@@ -145,7 +182,6 @@ const DashboardPage: React.FC = () => {
             </CardBody>
          </Card>
 
-        {/* --- Sección Búsqueda por Referencia (Admin) --- */}
         {isAdmin && (
              <Card shadow="md" className="dark:bg-gray-800">
                 <CardHeader> <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Buscar Inventario por Referencia</h2> </CardHeader>
